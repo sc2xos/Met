@@ -1,0 +1,11 @@
+{
+ "Area":{
+"lon_min": 120.0,
+"lon_max": 150.0,
+"lat_min": 22.4,
+"lat_max": 47.6 
+},
+"figure":{
+ "dpi": 500
+}
+}
