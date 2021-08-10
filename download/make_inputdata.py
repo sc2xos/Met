@@ -1,6 +1,5 @@
 # %%
 from datetime import datetime,timezone,timedelta
-from download.download_band4 import T_No
 import time
 import urllib.request
 import sys
@@ -49,14 +48,13 @@ print(T_No_list)
 # %%
 # 同一の台風番号中の連続する6日間を抽出
 # 連続する５日間　+ 1日間のデータが存在する場合、配列に追加(日付、file_path)
-testT_No_list = df.query('"台風番号" == 2001')
-print(testT_No_list)
+df.query('台風番号 == 2001').loc[:, "年"]
 #%%
 def make_1set():
-    T_year = df.loc[:, "年"["2001"]].values
-    T_month = df.loc[:, "月"].values
-    T_day = df.loc[:, "日"].values
-    T_hour = df.loc[:, "時（UTC）"].values
+    year = df.query('台風番号 == 2001').loc[:, "年"]
+    month = df.query('台風番号 == 2001').loc[:, "月"]
+    day = df.query('台風番号 == 2001').loc[:, "日"]
+    hour = df.query('台風番号 == 2001').loc[:, "時（UTC）"]
 # %%
 if __name__ == "__main__":
     main()
