@@ -27,10 +27,10 @@ def define_url(T_No, T_Date, band='4'):
     title : str  DL対象のファイル名
     url : str  DL先のURL
     """
-    title : str = "HMW8{0}.20{1}.jpg".format(T_Date[2::], T_No)
+    file : str = "HMW8{0}.20{1}.jpg".format(T_Date[2::], T_No)
     base : str = 'http://agora.ex.nii.ac.jp/digital-typhoon/wnp/by-name/20{0}/{1}/512x512/'.format(T_No, band)
-    url : str = base + title
-    return title, url
+    url : str = base + file
+    return file, url
 #%%
 def make_datadir(T_Date):
     data_dir = "/home/soga/data/typhoon/img/hmw/band4/{0}".format(T_Date[0:4])
