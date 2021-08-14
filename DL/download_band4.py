@@ -10,7 +10,7 @@ import pandas as pd
 
 import typhoon_utils as tutils
 # %%
-start_year = 2016
+start_year = 2020
 end_year = 2021
 WORKDIR="/home/soga/git/Met/DL"
 df = pd.concat([pd.read_csv("{0}/csv/table{1}.csv".format(WORKDIR,year),encoding="shift-jis") for year in range(start_year,end_year+1)])
