@@ -40,20 +40,17 @@ def make_dayarray(no, T_df):
     strong = T_df.query('台風番号 == {0} & ( 階級 == 4 | 階級 == 5)'.format(no) )
     date = np.array((strong.loc[:, ["年","月","日","時（UTC）"]]).values)
     print(("Number of target dates {0}").format(len(strong)))
-    
+    date_list = []
     #抽出した日時が6日以上ある場合、リストに追加する
     if( len(strong) >= 5 ):
-        target_date = []
         for i in range(len(date[:,0])):
-            target_date.append(str(date[i,0]).zfill(4)+str(date[i,1]).zfill(2)+str(date[i,2]).zfill(2)+str(date[i,3]).zfill(2))
-        print("No {0} : {1} days".format(no, len(target_date))  )
+            date_list.append(str(date[i,0]).zfill(4)+str(date[i,1]).zfill(2)+str(date[i,2]).zfill(2)+str(date[i,3]).zfill(2))
+        print("No {0} : {1} days".format(no, len(date_list))  )
     else:
         print("Process is Skipped!")
 
-    return target_date
+    return date_list
 
-target_date = make_dayarray(T_No_set[0],df) #階級4or5の台風の抽出 
-print(target_date)
 #%%
 #%%ファイルの存在をチェックする関数
 def check_file(no, T_Date):
@@ -71,11 +68,11 @@ def check_file(no, T_Date):
     data_dir : str= "/home/soga/data/typhoon/img/hmw/band4/{0}/{1}".format(T_Date[0:4], no)
     file_path : str = data_dir + "/" + file
     if(os.path.isfile( file_path ) is True):
-        return file_path, True
         print(file_path, "is exist")
+        return file_path, True
     else:
-        return None, False
         print(file_path, "is not exist.")
+        return None, False
 
 #%%入力した日付から5ステップの日付のリストを返す
 def make_6days(start_date):
@@ -91,7 +88,7 @@ def make_6days(start_date):
     start_date = dt.datetime.strptime(start_date, '%Y%m%d%H')
     end_date = start_date + dt.timedelta(hours=6*5)
     date, date_list  = start_date, []
-    
+    print() 
     while(  date <= end_date ):
         date_list.append( date.strftime("%Y%m%d%H") )
         date = date + dt.timedelta(hours=6)
@@ -113,15 +110,17 @@ def make_data(no, daylist):
     input_date, input_img =  [], []
     for i in range(len(daylist) - 6 ):
         six_days = make_6days(daylist[i])
-
-        if( six_days == daylist[i:i+6]  ):
+        print("##### Making input data : START_DATE = {0}".format(daylist[i]))
+        if( six_days == daylist[i:i+6] ):
 
             img_list = []
             for date in six_days:
                 file_path, _ = check_file(no, date)
                 img_list.append(file_path)
             
-            if( (None in img_list) ==  False):
+            if( (None in img_list) ==  True):
+                print("Skiped making data")
+            elif( (None in img_list) ==  True):
                 input_date.append(six_days)
                 input_img.append(img_list)
     
@@ -132,14 +131,13 @@ def make_data(no, daylist):
     print("input_img.shape = ", input_img.shape)
 
     return input_date, input_img
-test_date, test_img = make_data(T_No_set[0],target_date)
 
 # %%
 def main():
     input_date, input_img = [], []
     for no in T_No_set:
-        target_date = make_dayarray(no, df)
-        test_date, test_img = make_data(no, target_date)
+        exacted_date = make_dayarray(no, df)
+        input_date, input_img = make_data(no, exacted_date)
     return input_date, input_img
 #%%
 if __name__ == "__main__":
