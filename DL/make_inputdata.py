@@ -11,8 +11,8 @@ import pandas as pd
 
 import typhoon_utils as tutils
 # %%
-start_year = 2020
-end_year = 2020
+start_year = 2016
+end_year = 2021
 WORKDIR="/home/soga/git/Met/DL"
 df = pd.concat([pd.read_csv("{0}/csv/table{1}.csv".format(WORKDIR,year),encoding="shift-jis") for year in range(start_year, end_year+1)])
 df.head(3)
@@ -44,7 +44,8 @@ def make_dayarray(no, T_df):
     #抽出した日時が6日以上ある場合、リストに追加する
     if( len(strong) >= 5 ):
         for i in range(len(date[:,0])):
-            date_list.append(str(date[i,0]).zfill(4)+str(date[i,1]).zfill(2)+str(date[i,2]).zfill(2)+str(date[i,3]).zfill(2))
+            if(str(date[i,3]).zfill(2) in ['00', '06', '12', '18']): 
+                date_list.append(str(date[i,0]).zfill(4)+str(date[i,1]).zfill(2)+str(date[i,2]).zfill(2)+str(date[i,3]).zfill(2))
         print("No {0} : {1} days".format(no, len(date_list))  )
     else:
         print("Process is Skipped!")
@@ -68,10 +69,10 @@ def check_file(no, T_Date):
     data_dir : str= "/home/soga/data/typhoon/img/hmw/band4/{0}/{1}".format(T_Date[0:4], no)
     file_path : str = data_dir + "/" + file
     if(os.path.isfile( file_path ) is True):
-        print(file_path, "is exist")
+        #print(file_path, "is exist")
         return file_path, True
     else:
-        print(file_path, "is not exist.")
+        #print(file_path, "is not exist.")
         return None, False
 
 #%%入力した日付から5ステップの日付のリストを返す
@@ -88,7 +89,6 @@ def make_6days(start_date):
     start_date = dt.datetime.strptime(start_date, '%Y%m%d%H')
     end_date = start_date + dt.timedelta(hours=6*5)
     date, date_list  = start_date, []
-    print() 
     while(  date <= end_date ):
         date_list.append( date.strftime("%Y%m%d%H") )
         date = date + dt.timedelta(hours=6)
@@ -110,7 +110,7 @@ def make_data(no, daylist):
     input_date, input_img =  [], []
     for i in range(len(daylist) - 6 ):
         six_days = make_6days(daylist[i])
-        print("##### Making input data : START_DATE = {0}".format(daylist[i]))
+        print("##### Making input data : START_DATE = {0} #####".format(daylist[i]))
         if( six_days == daylist[i:i+6] ):
 
             img_list = []
@@ -119,31 +119,39 @@ def make_data(no, daylist):
                 img_list.append(file_path)
             
             if( (None in img_list) ==  True):
-                print("Skiped making data")
-            elif( (None in img_list) ==  True):
+                print("Skiped making data!")
+            elif( (None in img_list) ==  False):
                 input_date.append(six_days)
                 input_img.append(img_list)
-    
+                print("Completed making data!")
+        else:
+            print("Skiped making data!")
     input_date = np.array(input_date)
     input_img = np.array(input_img)
 
-    print("input_date.shape = ", input_date.shape)
-    print("input_img.shape = ", input_img.shape)
+    print("No {0} : input_date.shape = ".format(no),input_date.shape)
+    print("No {0} : input_img.shape = ".format(no),input_img.shape)
 
     return input_date, input_img
 
 # %%
 def main():
-    input_date, input_img = [], []
+    input_date, input_img = np.empty([0, 6]), np.empty([0, 6])
     for no in T_No_set:
         exacted_date = make_dayarray(no, df)
-        input_date, input_img = make_data(no, exacted_date)
+        date1, img1 = make_data(no, exacted_date)
+        if( (len(date1[:]) > 0) and (len(img1[:]) > 0)):
+            input_date = np.concatenate([input_date, date1]) 
+            input_img = np.concatenate([input_img, img1]) 
+    print("#############################################")
+    print("ALL Input Date Shape : " , input_date.shape) 
+    print("ALL Input Image Shape : " ,input_img.shape) 
+    print("#############################################")
     return input_date, input_img
 #%%
 if __name__ == "__main__":
     test1, test2 = main()
-    print(test1)
-    print(test2)
 #%%
-#%%
+for i in range(len(test1[:,0])):
+    print(test2[i,:])
 # %%
