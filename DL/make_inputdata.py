@@ -154,4 +154,7 @@ if __name__ == "__main__":
 #%%
 for i in range(len(test1[:,0])):
     print(test2[i,:])
-# %%
+
+#%%
+# サンプル2の切り出し、保存
+
