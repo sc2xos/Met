@@ -1,6 +1,0 @@
-Manufacturer ID: 0x3;
-OEM/Application ID: SD;
-Product Name: SB64G;
-Product Version: 8.0;
-Product Serial Number: 0x4cee169e;
-Manufacture Month/Year: 10/2002;
