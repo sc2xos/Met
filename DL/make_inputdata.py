@@ -6,16 +6,17 @@ import urllib.request
 
 import numpy as np
 import datetime as dt
+from numpy.core.numerictypes import ScalarType
 from numpy.lib.shape_base import _make_along_axis_idx
 import pandas as pd
+from pandas.core.base import DataError
 
 import typhoon_utils as tutils
 # %%
 start_year = 2016
 end_year = 2021
-WORKDIR="/home/soga/git/Met/DL"
-df = pd.concat([pd.read_csv("{0}/csv/table{1}.csv".format(WORKDIR,year),encoding="shift-jis") for year in range(start_year, end_year+1)])
-df.head(3)
+df = pd.concat([pd.read_csv("./csv/table{0}.csv".format(year),encoding="shift-jis") for year in range(start_year, end_year+1)])
+df.head(10)
 #%%
 T_No_list = df.loc[:, "台風番号"].values
 T_No_set = list(set(df.loc[:, "台風番号"].values))
@@ -25,7 +26,33 @@ T_day = df.loc[:, "日"].values
 T_hour = df.loc[:, "時（UTC）"].values
 T_Date_list = tutils.make_T_Date(T_year, T_month, T_day, T_hour)
 #%%
-def make_dayarray(no, T_df):
+time_width = 6 # hour
+#%%
+def make_datelist(start_date, end_date):
+    """
+    parameters
+    ----------
+    start_date : str 日付(YYYYMMDDHH)
+    end_date : str 日付(YYYYMMDDHH)
+
+    returns
+    ----------
+    date_list : list of str 日付(YYYYMMDDHH)のリスト
+    """
+    start_date = dt.datetime.strptime(start_date, '%Y%m%d%H')
+    end_date = dt.datetime.strptime(end_date, '%Y%m%d%H')
+    date, date_list  = start_date, []
+    
+    while(  date <= end_date ):
+        date_list.append( date.strftime("%Y%m%d%H") )
+        date = date + dt.timedelta(hours=time_width)
+
+    return date_list
+#%%
+date = np.array((df.loc[:, ["年","月","日","時（UTC）"]]).values)
+print(date[0,:])
+#%%
+def exact_data(no, T_df):
     """
     parameters
     ----------
@@ -35,23 +62,27 @@ def make_dayarray(no, T_df):
     ----------
     target_date_list : [ 台風番号 : int, 階級が4or5の日付(YYYYMMDDHH) : str] のリスト
     """
-    #同一台風番号で階級4or5が日時を抽出
-    print("##### Start process : Typhoon No.{0} #####".format(no))
-    strong = T_df.query('台風番号 == {0} & ( 階級 == 4 | 階級 == 5)'.format(no) )
-    date = np.array((strong.loc[:, ["年","月","日","時（UTC）"]]).values)
-    print(("Number of target dates {0}").format(len(strong)))
-    date_list = []
-    #抽出した日時が6日以上ある場合、リストに追加する
-    if( len(strong) >= 5 ):
-        for i in range(len(date[:,0])):
-            if(str(date[i,3]).zfill(2) in ['00', '06', '12', '18']): 
-                date_list.append(str(date[i,0]).zfill(4)+str(date[i,1]).zfill(2)+str(date[i,2]).zfill(2)+str(date[i,3]).zfill(2))
-        print("No {0} : {1} days".format(no, len(date_list))  )
-    else:
-        print("Process is Skipped!")
+    No_df = T_df.query('台風番号 == {0}'.format(no) )
+    date = np.array((No_df.loc[:, ["年","月","日","時（UTC）"]]).values)
+    pres = np.array((No_df.loc[:, ["中心気圧"]]).values)
+    scale = np.array((No_df.loc[:, ["階級"]]).values)
+    #階級に3になってからリストの作成スタート
+    date_list, pres_list, scale_list = [], [], []
 
-    return date_list
+    for i in range(len(date[:,0])):
+        if(str(date[i,3]).zfill(2) in ['00', '06', '12', '18']): 
+            date_list.append(str(date[i,0]).zfill(4)+str(date[i,1]).zfill(2)+str(date[i,2]).zfill(2)+str(date[i,3]).zfill(2))
+            pres_list.append(pres[i,0])
+            scale_list.append(scale[i,0])
+    #階級に3になってからリストの作成スタート
+    print(date_list)
+    pos = scale_list.index(3)
+    print(date_list[pos:])
+    print(scale_list[pos:])
+    #階級が前の時刻より下がっていないかのチェック
+    return date_list, pres_list, scale_list
 
+test1, test2, test3 = exact_data(T_No_set[0], df)
 #%%
 #%%ファイルの存在をチェックする関数
 def check_file(no, T_Date):
@@ -66,7 +97,7 @@ def check_file(no, T_Date):
     True or False 
     """
     file : str = "HMW8{0}.20{1}.jpg".format(T_Date[2::], no)
-    data_dir : str= "/home/soga/data/typhoon/img/hmw/band4/{0}/{1}".format(T_Date[0:4], no)
+    data_dir : str= "/data/typhoon/img/hmw/band4/{0}/{1}".format(T_Date[0:4], no)
     file_path : str = data_dir + "/" + file
     if(os.path.isfile( file_path ) is True):
         #print(file_path, "is exist")
@@ -138,7 +169,7 @@ def make_data(no, daylist):
 def main():
     input_date, input_img = np.empty([0, 6]), np.empty([0, 6])
     for no in T_No_set:
-        exacted_date = make_dayarray(no, df)
+        exacted_date = exact_data(no, df)
         date1, img1 = make_data(no, exacted_date)
         if( (len(date1[:]) > 0) and (len(img1[:]) > 0)):
             input_date = np.concatenate([input_date, date1]) 
